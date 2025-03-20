@@ -176,3 +176,6 @@ cython_debug/
 
 #ingoring video sample
 zed_video_sample.svo
+
+#igonring extracted folder
+/extracted
