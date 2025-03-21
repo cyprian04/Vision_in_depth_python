@@ -56,7 +56,7 @@ def Data_extraction_to_compressed_np(cam):
     os.makedirs(extracted_folder, exist_ok=True)  # Tworzymy folder jeśli nie istnieje
 
     point_clouds = []  # Lista na wszystkie klatki
-    frame_count = 1;
+    frame_count = 0;
 
     key = ''
     runtime = sl.RuntimeParameters()
@@ -70,27 +70,27 @@ def Data_extraction_to_compressed_np(cam):
         if err == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
             break
 
-        # Pobranie klatki RGB
-        cam.retrieve_image(image, sl.VIEW.LEFT)
-        img_np = image.get_data()[:, :, :3].astype(np.float32)  # RGB (ignorujemy kanał Alpha)
-
-        # Pobranie mapy głębi
-        cam.retrieve_measure(depth, sl.MEASURE.DEPTH)
-        depth_np = depth.get_data().astype(np.float32)
-
-        # Konwersja do formatu [x, y, z, r, g, b]
-        h, w, _ = img_np.shape
-        x, y = np.meshgrid(np.arange(w), np.arange(h))  # Pozycje pikseli w obrazie
-        z = depth_np  # Głębia
-
         # Tworzymy chmurę punktów dla tej klatki
-        point_cloud = np.stack([x, y, z, img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]], axis=-1).astype(np.float32)
-        point_clouds.append(point_cloud)  # Dodajemy do listy
+        if frame_count % 100 == 0: # later will get rid of it probably for now for small data
+            # Pobranie klatki RGB
+            cam.retrieve_image(image, sl.VIEW.LEFT)
+            img_np = image.get_data()[:, :, :3].astype(np.float32)  # RGB (ignorujemy kanał Alpha)
+
+            # Pobranie mapy głębi
+            cam.retrieve_measure(depth, sl.MEASURE.DEPTH)
+            depth_np = depth.get_data().astype(np.float32)
+
+            # Konwersja do formatu [x, y, z, r, g, b]
+            h, w, _ = img_np.shape
+            x, y = np.meshgrid(np.arange(w), np.arange(h))  # Pozycje pikseli w obrazie
+            z = depth_np  # Głębia
+            point_cloud = np.stack([x, y, z, img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]], axis=-1).astype(np.float32)
+            point_clouds.append(point_cloud)  # Dodajemy do listy
 
         
         print(f"Klatka nr:{frame_count} pobrana")
         frame_count+=1
-        if frame_count == 700: # for now just that much will change and fix later, with 1000 frames crashes
+        if frame_count == 1400: # for now, will change and fix later
             break
 
     # Konwersja listy na numpy array i zapisanie do skompresowanego pliku
@@ -101,6 +101,7 @@ def Data_extraction_to_compressed_np(cam):
     print(f"Zapisano {len(point_clouds)} klatek do {save_path}")
 
     # Sprzątanie
+    cv2.destroyAllWindows()
     cam.close()
 
 def main(option:int):
@@ -108,7 +109,7 @@ def main(option:int):
     input_type = sl.InputType()
     input_type.set_from_svo_file(filepath)  #Set init parameter to run from the .svo 
     init = sl.InitParameters(input_t=input_type, svo_real_time_mode=False)
-    init.depth_mode = sl.DEPTH_MODE.PERFORMANCE # can choose other types of modes
+    init.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS # can choose other types of modes
     cam = sl.Camera()
     status = cam.open(init)
     if status != sl.ERROR_CODE.SUCCESS: #Ensure the camera opened succesfully 
