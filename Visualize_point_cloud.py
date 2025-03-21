@@ -29,15 +29,14 @@ def visualize_point_clouds(npz_file):
     print(f"Zakres głębi (z): min={xyz[:,2].min()}, max={xyz[:,2].max()}")
         
 
-    # Usuwamy punkty o zerowej głębi
     valid_mask = xyz[:, 2] != 0
     xyz = xyz[valid_mask]
     rgb = rgb[valid_mask]
-
+    
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(xyz)
     pcd.colors = o3d.utility.Vector3dVector(rgb)
-
+    pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=10, std_ratio=2.0) # Filtracja outlierów (usuwa "odstające" punkty), bez tego wygląda gorzej
     o3d.visualization.draw_geometries([pcd])
 
 if __name__ == "__main__":
