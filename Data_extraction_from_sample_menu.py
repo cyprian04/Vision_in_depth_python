@@ -1,6 +1,7 @@
 import os 
 import sys
 import cv2
+import zipfile
 import argparse
 import numpy as np
 import pyzed.sl as sl
@@ -53,66 +54,67 @@ def Depth_video(cam):
     
 def Data_extraction_to_compressed_np(cam):
     extracted_folder = "extracted"
-    os.makedirs(extracted_folder, exist_ok=True)  # Tworzymy folder jeśli nie istnieje
+    os.makedirs(extracted_folder, exist_ok=True)
 
-    point_clouds = []  # Lista na wszystkie klatki
-    frame_count = 0;
+    point_clouds = []
+    frame_count = 0
 
     key = ''
     runtime = sl.RuntimeParameters()
     resolution = cam.get_camera_information().camera_configuration.resolution
-    image = sl.Mat(min(720,resolution.width) * 2,min(404,resolution.height), sl.MAT_TYPE.U8_C3, sl.MEM.CPU)
-    resolution = cam.get_camera_information().camera_configuration.resolution
-    depth = sl.Mat(min(720,resolution.width) * 2,min(404,resolution.height), sl.MAT_TYPE.U8_C3, sl.MEM.CPU)
+    image = sl.Mat(min(720, resolution.width) * 2, min(404, resolution.height), sl.MAT_TYPE.U8_C3, sl.MEM.CPU)
+    depth = sl.Mat(min(720, resolution.width) * 2, min(404, resolution.height), sl.MAT_TYPE.U8_C3, sl.MEM.CPU)
 
-    while key != ord('q'):  # 'q' kończy pętlę
+    while key != ord('q'): 
         err = cam.grab(runtime)
         if err == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
             break
 
-        # Tworzymy chmurę punktów dla tej klatki
-        if frame_count % 100 == 0: # later will get rid of it probably for now for small data
-            # Pobranie klatki RGB
-            cam.retrieve_image(image, sl.VIEW.LEFT)
-            img_np = image.get_data()[:, :, :3].astype(np.float32)  # RGB (ignorujemy kanał Alpha)
+        cam.retrieve_image(image, sl.VIEW.LEFT)
+        img_np = image.get_data()[:, :, :3].astype(np.float32)
 
-            # Pobranie mapy głębi
-            cam.retrieve_measure(depth, sl.MEASURE.DEPTH)
-            depth_np = depth.get_data().astype(np.float32)
+        cam.retrieve_measure(depth, sl.MEASURE.DEPTH)
+        depth_np = depth.get_data().astype(np.float32)
 
-            # Konwersja do formatu [x, y, z, r, g, b]
-            h, w, _ = img_np.shape
-            x, y = np.meshgrid(np.arange(w), np.arange(h))  # Pozycje pikseli w obrazie
-            z = depth_np  # Głębia
-            point_cloud = np.stack([x, y, z, img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]], axis=-1).astype(np.float32)
-            point_clouds.append(point_cloud)  # Dodajemy do listy
+        h, w, _ = img_np.shape
+        x, y = np.meshgrid(np.arange(w), np.arange(h))
+        z = depth_np
+        point_cloud = np.stack([x, y, z, img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]], axis=-1).astype(np.float32)
+        point_clouds.append(point_cloud)  
 
-        
         print(f"Klatka nr:{frame_count} pobrana")
-        frame_count+=1
-        if frame_count == 1400: # for now, will change and fix later
+        frame_count += 1
+
+        if frame_count % 100 == 0:
+            part_file_path = os.path.join(extracted_folder, f"point_clouds_part_{frame_count // 100}.npz")
+            point_clouds_array = np.array(point_clouds, dtype=np.float32)  # Konwersja na numpy array
+            np.savez_compressed(part_file_path, data=point_clouds_array)
+            print(f"Zapisano {len(point_clouds)} klatek do {part_file_path}")
+            point_clouds = [] 
+
+        if frame_count == 1400:  
             break
 
-    # Konwersja listy na numpy array i zapisanie do skompresowanego pliku
-    point_clouds = np.array(point_clouds, dtype=np.float32)  # Konwersja na numpy array
-    save_path = os.path.join(extracted_folder, "point_clouds.npz")
-    np.savez_compressed(save_path, data=point_clouds)
+    zip_path = os.path.join(extracted_folder, "all_point_clouds.zip")
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for file in os.listdir(extracted_folder):
+            if file.endswith(".npz"):
+                zipf.write(os.path.join(extracted_folder, file), file)
 
-    print(f"Zapisano {len(point_clouds)} klatek do {save_path}")
+    print(f"Zapisano dane w formacie zip: {zip_path}")
 
-    # Sprzątanie
     cv2.destroyAllWindows()
     cam.close()
 
 def main(option:int):
-    filepath = opt.input_svo_file # Path to the .svo file to be playbacked
+    filepath = opt.input_svo_file
     input_type = sl.InputType()
-    input_type.set_from_svo_file(filepath)  #Set init parameter to run from the .svo 
+    input_type.set_from_svo_file(filepath)  
     init = sl.InitParameters(input_t=input_type, svo_real_time_mode=False)
     init.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS # can choose other types of modes
     cam = sl.Camera()
     status = cam.open(init)
-    if status != sl.ERROR_CODE.SUCCESS: #Ensure the camera opened succesfully 
+    if status != sl.ERROR_CODE.SUCCESS: 
         print("Camera Open", status, "Exit program.")
         exit(1)
 
