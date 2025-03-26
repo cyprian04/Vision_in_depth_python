@@ -1,6 +1,6 @@
+import os
 import numpy as np
 import open3d as o3d
-import os
 
 def visualize_point_clouds(npz_file):
     if not os.path.exists(npz_file):
@@ -9,7 +9,6 @@ def visualize_point_clouds(npz_file):
     
     data = np.load(npz_file)["data"]
     print(f"Załadowano dane: {data.shape}")
-    
     
     frame_index = 11 
     point_cloud = data[frame_index]
@@ -20,10 +19,10 @@ def visualize_point_clouds(npz_file):
     rgb = rgb[:, [2, 1, 0]]  # Zamiana BGR -> RGB
 
     
-    #Sprawdzam NaN i ustawiam na 0
+    # Sprawdzam NaN i ustawiam na 0
     nan_mask = np.isnan(xyz[:, 2])
     if np.any(nan_mask):
-        print(f"⚠️ Znaleziono {nan_mask.sum()} NaN w głębi! Usuwam je...")
+        print(f"Znaleziono {nan_mask.sum()} NaN w głębi! Usuwam je...")
         xyz[nan_mask, 2] = 0
     # Zakres głębi po usunięciu NaN
     print(f"Zakres głębi (z): min={xyz[:,2].min()}, max={xyz[:,2].max()}")
@@ -40,5 +39,5 @@ def visualize_point_clouds(npz_file):
     o3d.visualization.draw_geometries([pcd])
 
 if __name__ == "__main__":
-    npz_file = "extracted/point_clouds_neural_plus.npz"
+    npz_file = "extracted/point_clouds_part_1.npz"
     visualize_point_clouds(npz_file)

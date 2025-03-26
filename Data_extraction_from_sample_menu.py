@@ -61,47 +61,44 @@ def Data_extraction_to_compressed_np(cam):
 
     key = ''
     runtime = sl.RuntimeParameters()
-    resolution = cam.get_camera_information().camera_configuration.resolution
-    image = sl.Mat(min(720, resolution.width) * 2, min(404, resolution.height), sl.MAT_TYPE.U8_C3, sl.MEM.CPU)
-    depth = sl.Mat(min(720, resolution.width) * 2, min(404, resolution.height), sl.MAT_TYPE.U8_C3, sl.MEM.CPU)
+    rgb = sl.Mat()
+    xyz = sl.Mat()
 
+    cam.set_svo_position(1000)
     while key != ord('q'): 
         err = cam.grab(runtime)
         if err == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
             break
 
-        cam.retrieve_image(image, sl.VIEW.LEFT)
-        img_np = image.get_data()[:, :, :3].astype(np.float32)
+        cam.retrieve_image(rgb, sl.VIEW.LEFT)
+        rgb_np = rgb.get_data()[:, :, :3].astype(np.float32)
 
-        cam.retrieve_measure(depth, sl.MEASURE.DEPTH)
-        depth_np = depth.get_data().astype(np.float32)
+        cam.retrieve_measure(xyz, sl.MEASURE.XYZRGBA)
+        xyz_np = xyz.get_data()[:, :, :3].astype(np.float32)
 
-        h, w, _ = img_np.shape
-        x, y = np.meshgrid(np.arange(w), np.arange(h))
-        z = depth_np
-        point_cloud = np.stack([x, y, z, img_np[:, :, 0], img_np[:, :, 1], img_np[:, :, 2]], axis=-1).astype(np.float32)
+        point_cloud = np.stack([xyz_np[:, :, 0], xyz_np[:, :, 1], xyz_np[:, :, 2], rgb_np[:, :, 0], rgb_np[:, :, 1], rgb_np[:, :, 2]], axis=-1).astype(np.float32)
         point_clouds.append(point_cloud)  
+
 
         print(f"Klatka nr:{frame_count} pobrana")
         frame_count += 1
 
         if frame_count % 100 == 0:
             part_file_path = os.path.join(extracted_folder, f"point_clouds_part_{frame_count // 100}.npz")
-            point_clouds_array = np.array(point_clouds, dtype=np.float32)  # Konwersja na numpy array
+            point_clouds_array = np.array(point_clouds, dtype=np.float32)
             np.savez_compressed(part_file_path, data=point_clouds_array)
             print(f"Zapisano {len(point_clouds)} klatek do {part_file_path}")
             point_clouds = [] 
 
-        if frame_count == 1400:  
+        if frame_count == 100:  
             break
 
-    zip_path = os.path.join(extracted_folder, "all_point_clouds.zip")
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for file in os.listdir(extracted_folder):
-            if file.endswith(".npz"):
-                zipf.write(os.path.join(extracted_folder, file), file)
-
-    print(f"Zapisano dane w formacie zip: {zip_path}")
+    #zip_path = os.path.join(extracted_folder, "all_point_clouds.zip")
+    #with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+    #    for file in os.listdir(extracted_folder):
+    #        if file.endswith(".npz"):
+    #            zipf.write(os.path.join(extracted_folder, file), file)
+    #print(f"Zapisano dane w formacie zip: {zip_path}")
 
     cv2.destroyAllWindows()
     cam.close()
@@ -111,7 +108,7 @@ def main(option:int):
     input_type = sl.InputType()
     input_type.set_from_svo_file(filepath)  
     init = sl.InitParameters(input_t=input_type, svo_real_time_mode=False)
-    init.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS # can choose other types of modes
+    init.depth_mode = sl.DEPTH_MODE.NEURAL_PLUS
     cam = sl.Camera()
     status = cam.open(init)
     if status != sl.ERROR_CODE.SUCCESS: 
