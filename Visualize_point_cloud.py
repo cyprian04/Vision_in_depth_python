@@ -1,11 +1,7 @@
-import os
 import numpy as np
 import open3d as o3d
 
-def visualize_point_clouds(npz_file):
-    if not os.path.exists(npz_file):
-        print(f"Plik {npz_file} nie istnieje!")
-        return
+def visualize(npz_file):
     
     data = np.load(npz_file)["data"]
     print(f"Załadowano dane: {data.shape}")
@@ -19,12 +15,11 @@ def visualize_point_clouds(npz_file):
     rgb = rgb[:, [2, 1, 0]]  # Zamiana BGR -> RGB
 
     
-    # Sprawdzam NaN i ustawiam na 0
     nan_mask = np.isnan(xyz[:, 2])
     if np.any(nan_mask):
         print(f"Znaleziono {nan_mask.sum()} NaN w głębi! Usuwam je...")
         xyz[nan_mask, 2] = 0
-    # Zakres głębi po usunięciu NaN
+
     print(f"Zakres głębi (z): min={xyz[:,2].min()}, max={xyz[:,2].max()}")
         
 
@@ -35,9 +30,5 @@ def visualize_point_clouds(npz_file):
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(xyz)
     pcd.colors = o3d.utility.Vector3dVector(rgb)
-    pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=10, std_ratio=2.0) # Filtracja outlierów (usuwa "odstające" punkty), bez tego wygląda gorzej
+    pcd, _ = pcd.remove_statistical_outlier(nb_neighbors=10, std_ratio=2.0)
     o3d.visualization.draw_geometries([pcd])
-
-if __name__ == "__main__":
-    npz_file = "extracted/point_clouds_part_1.npz"
-    visualize_point_clouds(npz_file)
