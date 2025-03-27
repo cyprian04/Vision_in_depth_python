@@ -50,19 +50,49 @@ class ZedPlayer:
                 self.run = False
                 os.system("cls")
             case _:
-                print("Wrong option! try again...")
-
+                input("Wrong option! press Enter to try again...")
+        os.system("cls")
+    
     def get_run(self):
         return self.run
 
     def get_rgb(self):
-        pass
+        image = sl.Mat()
+        while True:
+            frame = int(input("Enter frame index to extract: "))
+            if isinstance(frame, int) and frame >= 0 and frame < self.cam.get_svo_number_of_frames():
+                break
+            else: continue
+
+        self.cam.set_svo_position(frame)
+        self.cam.retrieve_image(image, sl.VIEW.LEFT)
+        img_np = image.get_data()
+
+        cv2.imwrite("image.jpg", img_np)
+        cv2.waitKey(1)
+        cv2.destroyAllWindows()
+        self.cam.close()
 
     def get_depth(self):
-        pass
+        depth = sl.Mat()
+        while True:
+            frame = int(input("Enter frame index to extract: "))
+            if isinstance(frame, int) and frame >= 0 and frame < self.cam.get_svo_number_of_frames():
+                break
+            else: continue
+
+        self.cam.set_svo_position(frame)
+        self.cam.retrieve_image(depth, sl.VIEW.DEPTH)
+        depth_np = depth.get_data()
+
+        cv2.imwrite("depth.jpg", depth_np)
+        cv2.waitKey(1)
+        cv2.destroyAllWindows()
+        self.cam.close()
 
     def get_point_cloud(self):
-        '''extract point_clouds from frames in compressed format: numpy array (w,h,6) -> [x,y,z,r,g,b]'''
+        '''extract point_clouds from frames in compressed format: 
+        numpy array (w,h,6) -> [x,y,z,r,g,b] into extracted folder'''
         extracted_folder = "extracted"
         os.makedirs(extracted_folder, exist_ok=True)
 
@@ -86,7 +116,7 @@ class ZedPlayer:
             self.cam.retrieve_measure(xyz, sl.MEASURE.XYZRGBA)
             xyz_np = xyz.get_data()[:, :, :3].astype(np.float32)
 
-            point_cloud = np.stack([xyz_np[:, :, 0], xyz_np[:, :, 1], xyz_np[:, :, 2], rgb_np[:, :, 0], rgb_np[:, :, 1], rgb_np[:, :, 2]], axis=-1).astype(np.float32)
+            point_cloud = np.stack([xyz_np, rgb_np], axis=-1).astype(np.float32) # need to check if this simplification works
             point_clouds.append(point_cloud)  
 
 
@@ -121,11 +151,11 @@ class ZedPlayer:
         while key != ord('q'): 
             if self.cam.grab(runtime) == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
                 break
-
             self.cam.retrieve_image(image, sl.VIEW.LEFT)
             img_np = image.get_data()
-        cv2.imshow("image", img_np)
-        key = cv2.waitKey(1)
+
+            cv2.imshow("image", img_np)
+            key = cv2.waitKey(1)
 
         cv2.destroyAllWindows()
         self.cam.close()
@@ -138,12 +168,11 @@ class ZedPlayer:
         while key != ord('q'): 
             if self.cam.grab(runtime) == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
                 break
-
             self.cam.retrieve_image(depth, sl.VIEW.DEPTH)
             depth_np = depth.get_data()
             
-        cv2.imshow("depth", depth_np)
-        key = cv2.waitKey(1)
+            cv2.imshow("depth", depth_np)
+            key = cv2.waitKey(1)
 
         cv2.destroyAllWindows()
         self.cam.close()

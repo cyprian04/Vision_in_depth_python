@@ -2,7 +2,6 @@ import os
 import ZedPlayer
 import Visualize_point_cloud as visualize_pcd
 
-#print("[OPTION 3] Press 3 to extract data from frames in compressed format np array (w,h,6) -> [x,y,z,r,g,b] via numpy")
 
 def start_menu():
     print("[OPTION 1] Press 1 if you want to operate on video sample")
@@ -42,8 +41,8 @@ def main(run_state:dict):
         case "3":
             run_state["run"] = False
         case _:
-            print("Wrong option! try again...")
-
+            input("Wrong option! press Enter to try again...")
+    
 if __name__ == "__main__":
     print("[WELCOME TO VISION IN DEPTH PROJECT] choose one of the options listed below...\n")
     run_state = {"run": True}
