@@ -1,5 +1,7 @@
 import os
-import ZedPlayer
+import tkinter as tk
+from tkinter import filedialog
+from ZedPlayer import ZedPlayer as Player
 import Visualize_point_cloud as visualize_pcd
 
 
@@ -17,23 +19,34 @@ def main(run_state:dict):
     match option:
         case "1":
             while True:
-                filepath = input("Enter filepath: ")
+
+                root = tk.Tk()
+                root.withdraw()
+                root.attributes('-topmost', True)
+                filepath = filedialog.askopenfilename(title="Wybierz plik")
+
                 if not os.path.exists(filepath):
                     os.system('cls')
-                    print(f"File {filepath} doesn't exist!")
+                    print(f"[ERROR] File {filepath} doesn't exist! choose again!")
                     continue
                 else: break
 
-            player = ZedPlayer(filepath)
+            player = Player(filepath)
             while player.get_run():
                 player.menu()  
+            player.close_cam()
 
         case "2":
             while True:
-                filepath = input("Enter filepath: ")
+                
+                root = tk.Tk()
+                root.withdraw()
+                root.attributes('-topmost', True)
+                filepath = filedialog.askopenfilename(title="Wybierz plik")
+
                 if not os.path.exists(filepath):
                     os.system('cls')
-                    print(f"File {filepath} doesn't exist!")
+                    print(f"[ERROR] File {filepath} doesn't exist! choose again!")
                     continue
                 else: break
             visualize_pcd.visualize(filepath) 

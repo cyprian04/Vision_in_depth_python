@@ -53,6 +53,11 @@ class ZedPlayer:
                 input("Wrong option! press Enter to try again...")
         os.system("cls")
     
+
+    def close_cam(self):
+        self.cam.close()
+        self.cam = None
+
     def get_run(self):
         return self.run
 
@@ -71,7 +76,6 @@ class ZedPlayer:
         cv2.imwrite("image.jpg", img_np)
         cv2.waitKey(1)
         cv2.destroyAllWindows()
-        self.cam.close()
 
     def get_depth(self):
         depth = sl.Mat()
@@ -88,7 +92,6 @@ class ZedPlayer:
         cv2.imwrite("depth.jpg", depth_np)
         cv2.waitKey(1)
         cv2.destroyAllWindows()
-        self.cam.close()
 
     def get_point_cloud(self):
         '''extract point_clouds from frames in compressed format: 
@@ -116,7 +119,7 @@ class ZedPlayer:
             self.cam.retrieve_measure(xyz, sl.MEASURE.XYZRGBA)
             xyz_np = xyz.get_data()[:, :, :3].astype(np.float32)
 
-            point_cloud = np.stack([xyz_np, rgb_np], axis=-1).astype(np.float32) # need to check if this simplification works
+            point_cloud = np.dstack((xyz_np, rgb_np)).astype(np.float32)
             point_clouds.append(point_cloud)  
 
 
@@ -141,12 +144,12 @@ class ZedPlayer:
         print(f"Zapisano dane w formacie zip: {zip_path}")
 
         cv2.destroyAllWindows()
-        self.cam.close()
 
     def play_rgb_video(self):
         key = ''
         runtime = sl.RuntimeParameters()
         image = sl.Mat()
+        self.cam.set_svo_position(0)
 
         while key != ord('q'): 
             if self.cam.grab(runtime) == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
@@ -158,12 +161,12 @@ class ZedPlayer:
             key = cv2.waitKey(1)
 
         cv2.destroyAllWindows()
-        self.cam.close()
 
     def play_depth_video(self):
         key = ''
         runtime = sl.RuntimeParameters()
         depth = sl.Mat()
+        self.cam.set_svo_position(0)
 
         while key != ord('q'): 
             if self.cam.grab(runtime) == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
@@ -175,4 +178,3 @@ class ZedPlayer:
             key = cv2.waitKey(1)
 
         cv2.destroyAllWindows()
-        self.cam.close()
