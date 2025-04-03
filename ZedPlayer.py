@@ -69,11 +69,11 @@ class ZedPlayer:
                 break
             else: continue
 
-        self.cam.set_svo_position(frame)
+        self.cam.set_svo_position(frame)        
+        self.cam.grab(sl.RuntimeParameters())
         self.cam.retrieve_image(image, sl.VIEW.LEFT)
-        img_np = image.get_data()
-
-        cv2.imwrite("image.jpg", img_np)
+        img_np = image.get_data()[:, :, :3].astype(np.float32)
+        cv2.imwrite("image.png", img_np)
         cv2.waitKey(1)
         cv2.destroyAllWindows()
 
@@ -85,10 +85,14 @@ class ZedPlayer:
                 break
             else: continue
 
-        self.cam.set_svo_position(frame)
+        self.cam.set_svo_position(frame)        
+        self.cam.grab(sl.RuntimeParameters())
         self.cam.retrieve_image(depth, sl.VIEW.DEPTH)
         depth_np = depth.get_data()
 
+        depth_np[np.isnan(depth_np)] = 0
+        depth_np[np.isinf(depth_np)] = 0
+    
         cv2.imwrite("depth.jpg", depth_np)
         cv2.waitKey(1)
         cv2.destroyAllWindows()
