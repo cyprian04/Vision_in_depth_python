@@ -49,12 +49,13 @@ def main(run_state:dict):
                     print(f"[ERROR] File {filepath} doesn't exist! choose again!")
                     continue
                 else: break
+            print("[INFO] Visualising point cloud in open3d...")
             visualize_pcd.visualize(filepath) 
 
         case "3":
             run_state["run"] = False
         case _:
-            input("Wrong option! press Enter to try again...")
+            input("[INFO] Wrong option! press Enter to try again...")
     
 if __name__ == "__main__":
     print("[WELCOME TO VISION IN DEPTH PROJECT] choose one of the options listed below...\n")

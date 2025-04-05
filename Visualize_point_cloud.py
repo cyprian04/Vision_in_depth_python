@@ -4,7 +4,7 @@ import open3d as o3d
 def visualize(npz_file):
     
     data = np.load(npz_file)["data"]
-    print(f"Załadowano dane: {data.shape}")
+    print(f"[INFO] Loaded data: {data.shape}")
     
     frame_index = 11 
     point_cloud = data[frame_index]
