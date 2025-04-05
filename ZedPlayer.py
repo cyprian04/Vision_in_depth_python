@@ -33,7 +33,8 @@ class ZedPlayer:
         print("[OPTION 3] Press 3 to exctract point_clouds")
         print("[OPTION 4] Press 4 to playback rgb video")
         print("[OPTION 5] Press 5 to playback depth video")
-        print("[OPTION 6] Press 6 to exit")
+        print("[OPTION 6] Press 6 to convert rgb frames to video")
+        print("[OPTION 7] Press 7 to exit")
         option =  input("Option: ")
 
         match option:
@@ -48,6 +49,8 @@ class ZedPlayer:
             case "5":
                 self.play_depth_video()
             case "6":
+                self.convert_rgb_frames_to_video()
+            case "7":
                 self.run = False
                 os.system("cls")
             case _:
@@ -110,7 +113,9 @@ class ZedPlayer:
         cv2.destroyAllWindows()
 
     def get_point_cloud(self):
-        '''Extract point clouds from selected frames and compress them into a folder.'''
+        '''
+        Extract point clouds from selected frames and compress them into a folder.
+        '''
         extracted_folder = "extracted"
         os.makedirs(extracted_folder, exist_ok=True)
 
@@ -204,3 +209,32 @@ class ZedPlayer:
             key = cv2.waitKey(1)
 
         cv2.destroyAllWindows()
+
+    def convert_rgb_frames_to_video(self, output_filename="output.mp4"):
+        """
+        Extracts all RGB frames from the SVO file and writes them to a video file.
+        """
+        num_frames = self.cam.get_svo_number_of_frames()
+        fps = self.cam.get_init_parameters().camera_fps
+
+        image = sl.Mat()
+        runtime = sl.RuntimeParameters()
+        self.cam.set_svo_position(0)
+        
+        self.cam.retrieve_image(image, sl.VIEW.LEFT)
+        frame_np = image.get_data()[:, :, :3]
+        height, width, _ = frame_np.shape
+
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video_writer = cv2.VideoWriter(output_filename, fourcc, fps, (width, height))
+
+        for frame_index in range(num_frames):
+            if self.cam.grab(runtime) == sl.ERROR_CODE.END_OF_SVOFILE_REACHED:
+                break   
+            self.cam.retrieve_image(image, sl.VIEW.LEFT)
+            image_np = image.get_data()[:, :, :3]
+            video_writer.write(image_np)
+            print(f"[INFO] Frame {frame_index+1}/{num_frames} written")
+        
+        video_writer.release()
+        input(f"[SUCCESS] Video saved as {output_filename}. Press ENTER to continue...")
