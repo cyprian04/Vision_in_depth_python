@@ -2,6 +2,9 @@ import numpy as np
 import open3d as o3d
 
 def visualize(npz_file):
+    '''
+    Responsible for visualizing the pcd in open3d enviroment
+    '''
     
     data = np.load(npz_file)["data"]
     print(f"[INFO] Loaded data: {data.shape}")

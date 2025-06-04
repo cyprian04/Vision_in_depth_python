@@ -6,6 +6,9 @@ import numpy as np
 import pyzed.sl as sl
 
 class ZedPlayer:
+    '''
+    Creating instance of a ZedPlayer which manages basic operation on .svo sample files 
+    '''
     def __init__(self, filepath):
         self.run = True
         self.filepath = filepath
@@ -28,6 +31,10 @@ class ZedPlayer:
         os.system("cls")
 
     def menu(self):
+        '''
+        ZedPlayer menu where various options can be preformed
+        '''
+
         print("[OPTION 1] Press 1 to exctract rgb frames")
         print("[OPTION 2] Press 2 to exctract depth frames")
         print("[OPTION 3] Press 3 to exctract point_clouds")
@@ -58,13 +65,25 @@ class ZedPlayer:
         os.system("cls")
     
     def close_cam(self):
+        '''
+        closes cam instance and sets it to None. (used in main menu only after exiting ZedPlayer menu)
+        '''
         self.cam.close()
         self.cam = None
 
     def get_run(self):
+        '''
+        Returns run as boolean
+        '''
         return self.run
 
     def get_rgb(self):
+        '''
+        Prompts the user for a specific frame index and extracts the corresponding RGB image
+        from the SVO file. The image is saved as "image.png".
+
+        Raises: ValueError: If the entered frame index is invalid.
+        '''
         image = sl.Mat()
         while True:
             os.system("cls")
@@ -87,6 +106,12 @@ class ZedPlayer:
         cv2.destroyAllWindows()
 
     def get_depth(self):
+        '''
+        Prompts the user for a specific frame index and extracts the corresponding depth map
+        from the SVO file. The depth map is saved as "depth.jpg", with NaNs and infs set to 0.
+
+        Raises: ValueError: If the entered frame index is invalid.
+        '''
         depth = sl.Mat()
         while True:
             os.system("cls")
@@ -114,7 +139,10 @@ class ZedPlayer:
 
     def get_point_cloud(self):
         '''
-        Extract point clouds from selected frames and compress them into a folder.
+        Extracts point clouds (RGB + 3D coordinates) from a range of frames selected by the user.
+        Saves compressed `.npz` files in the "extracted" directory, then compresses them into a zip archive.
+
+        Raises: ValueError: If the entered frame indices are invalid.
         '''
         extracted_folder = "extracted"
         os.makedirs(extracted_folder, exist_ok=True)
@@ -177,6 +205,10 @@ class ZedPlayer:
         cv2.destroyAllWindows()
 
     def play_rgb_video(self):
+        '''
+        Plays the RGB video stream from the beginning of the SVO file using OpenCV.
+        The video can be stopped by pressing the 'q' key.
+        '''
         key = ''
         runtime = sl.RuntimeParameters()
         image = sl.Mat()
@@ -194,6 +226,10 @@ class ZedPlayer:
         cv2.destroyAllWindows()
 
     def play_depth_video(self):
+        '''
+        Plays the depth video stream from the beginning of the SVO file using OpenCV.
+        The video can be stopped by pressing the 'q' key.
+        '''
         key = ''
         runtime = sl.RuntimeParameters()
         depth = sl.Mat()
@@ -211,9 +247,9 @@ class ZedPlayer:
         cv2.destroyAllWindows()
 
     def convert_rgb_frames_to_video(self, output_filename="output.mp4"):
-        """
-        Extracts all RGB frames from the SVO file and writes them to a video file.
-        """
+        '''
+        Extracts all RGB frames from the SVO file and writes them to a video .mp4 file.
+        '''
         num_frames = self.cam.get_svo_number_of_frames()
         fps = self.cam.get_init_parameters().camera_fps
 

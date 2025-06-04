@@ -6,20 +6,26 @@ import Visualize_point_cloud as visualize_pcd
 
 
 def start_menu():
+    '''
+    The function responsible for selecting the main program action to be performed
+    '''
     print("[OPTION 1] Press 1 if you want to operate on video sample")
     print("[OPTION 2] Press 2 to visualize in 3D already extraced point clouds from a file")
     print("[OPTION 3] Press 3 to exit the program")
     return input("Option: ")
 
 def main(run_state:dict):
-
+    '''
+    Main of a program where you can either:
+        *  operate on video sample
+        *  visualize in 3D already extraced point clouds  
+    '''
     option = start_menu()
     os.system('cls')
 
     match option:
         case "1":
             while True:
-
                 root = tk.Tk()
                 root.withdraw()
                 root.attributes('-topmost', True)
@@ -38,7 +44,6 @@ def main(run_state:dict):
 
         case "2":
             while True:
-                
                 root = tk.Tk()
                 root.withdraw()
                 root.attributes('-topmost', True)
