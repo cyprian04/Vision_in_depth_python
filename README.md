@@ -1,5 +1,3 @@
-## Ten projekt powstał jako zaliczenie laboratoriów z Języka Python
-
 # Vision in depth Python
 
 This project allows you to work with `.svo` files from a ZED camera, extract RGB images, depth maps and point clouds, as well as play video and visualize point clouds in 3D.
